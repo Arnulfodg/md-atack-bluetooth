@@ -3,25 +3,34 @@ import logging
 import os
 import threading
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 from bluetooth_attacker import BluetoothAttacker
 from bluetooth_scanner import BluetoothScanner
+from safety_controls import (
+    AGGRESSIVE_DOS_DURATION,
+    AGGRESSIVE_DOS_THREADS,
+    AGGRESSIVE_PACKET_SIZE,
+    DEFAULT_DOS_DURATION,
+    DEFAULT_DOS_THREADS,
+    DEFAULT_PACKET_SIZE,
+    normalize_mac,
+)
 from utils import get_palette
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_BLACKLIST_FILE = "blacklist.json"
 DEFAULT_WATCH_INTERVAL = 5
-AGGRESSIVE_THREADS = 300
-AGGRESSIVE_PACKET_SIZE = 60
-AGGRESSIVE_DURATION = 300
+WATCH_THREADS = DEFAULT_DOS_THREADS
+WATCH_PACKET_SIZE = DEFAULT_PACKET_SIZE
+WATCH_DURATION = DEFAULT_DOS_DURATION
 
 
 class BlacklistManager:
     """
-    Gestiona la lista negra y orquesta ataques DoS agresivos cuando
-    se detectan dispositivos objetivo en las cercanías.
+    Gestiona objetivos autorizados y orquesta pruebas de estrés controladas
+    cuando se detectan dispositivos dentro del alcance definido.
     """
 
     def __init__(
@@ -29,10 +38,16 @@ class BlacklistManager:
         adapter: str,
         blacklist_path: str = DEFAULT_BLACKLIST_FILE,
         watch_interval: int = DEFAULT_WATCH_INTERVAL,
+        dry_run: bool = False,
+        aggressive: bool = False,
+        authorized_macs: Optional[Set[str]] = None,
     ) -> None:
         self.adapter = adapter
         self.blacklist_path = blacklist_path
         self.watch_interval = max(1, watch_interval)
+        self.dry_run = dry_run
+        self.aggressive = aggressive
+        self.authorized_macs = {normalize_mac(mac) for mac in authorized_macs} if authorized_macs else None
         self.scanner = BluetoothScanner()
         self.blacklist: List[Dict[str, object]] = []
         self._attack_threads: Dict[str, threading.Thread] = {}
@@ -46,13 +61,21 @@ class BlacklistManager:
     @staticmethod
     def _normalize_entry(entry) -> Optional[Dict[str, object]]:
         if isinstance(entry, str):
-            return {"mac": entry.upper(), "active": True}
+            try:
+                return {"mac": normalize_mac(entry), "active": True}
+            except ValueError:
+                logger.warning("Ignoring invalid MAC in blacklist: %s", entry)
+                return None
         if isinstance(entry, dict):
             mac = entry.get("mac") or entry.get("target")
             if not mac:
                 return None
             active = entry.get("active", True)
-            return {"mac": str(mac).upper(), "active": bool(active)}
+            try:
+                return {"mac": normalize_mac(str(mac)), "active": bool(active)}
+            except ValueError:
+                logger.warning("Ignoring invalid MAC in blacklist entry: %s", entry)
+                return None
         return None
 
     def load_blacklist(self) -> None:
@@ -121,9 +144,14 @@ class BlacklistManager:
         print("└────┴─────────────────┴──────────┘")
 
     def add_mac(self, mac: str) -> None:
-        mac = mac.strip().upper()
-        if not mac:
-            print("[!] Debes proporcionar una dirección MAC válida.")
+        try:
+            mac = normalize_mac(mac)
+        except ValueError as exc:
+            print(f"[!] {exc}")
+            return
+        if self.authorized_macs is not None and mac not in self.authorized_macs:
+            print(f"[!] {mac} no está incluida en el scope autorizado.")
+            logger.warning("Rejected MAC outside scope: %s", mac)
             return
 
         existing = self._find_entry(mac)
@@ -291,11 +319,18 @@ class BlacklistManager:
         return devices or {}
 
     def _matching_targets(self, devices: Dict[int, str]) -> List[Dict[str, object]]:
-        macs = set(devices.values())
+        macs = set()
+        for mac in devices.values():
+            try:
+                macs.add(normalize_mac(mac))
+            except ValueError:
+                logger.debug("Ignoring invalid MAC from scan result: %s", mac)
         matches = [
             entry for entry in self._active_entries()
             if entry["mac"] in macs
         ]
+        if self.authorized_macs is not None:
+            matches = [entry for entry in matches if entry["mac"] in self.authorized_macs]
         if matches:
             print("[*] Encontradas coincidencias con la lista negra:")
             for entry in matches:
@@ -321,22 +356,26 @@ class BlacklistManager:
         attack_thread.start()
 
     def _attack_worker(self, mac: str) -> None:
-        print(f"[*] Lanzando DoS invasivo contra {mac} (modo agresivo).")
-        logger.info("Launching blacklist DoS attack against %s", mac)
-        attacker = BluetoothAttacker(mac, self.adapter)
+        mode = "aggressive" if self.aggressive else "auto"
+        threads = AGGRESSIVE_DOS_THREADS if self.aggressive else WATCH_THREADS
+        packet_size = AGGRESSIVE_PACKET_SIZE if self.aggressive else WATCH_PACKET_SIZE
+        duration = AGGRESSIVE_DOS_DURATION if self.aggressive else WATCH_DURATION
+        print(f"[*] Lanzando prueba de estrés contra {mac} (modo={mode}).")
+        logger.info("Launching authorized target stress test against %s (mode=%s)", mac, mode)
+        attacker = BluetoothAttacker(mac, self.adapter, dry_run=self.dry_run)
         try:
             attacker.dos_attack(
-                threads_count=AGGRESSIVE_THREADS,
-                package_size=AGGRESSIVE_PACKET_SIZE,
-                duration=AGGRESSIVE_DURATION,
-                mode="auto",
+                threads_count=threads,
+                package_size=packet_size,
+                duration=duration,
+                mode=mode,
             )
         except Exception as exc:
-            print(f"[!] Error durante el ataque a {mac}: {exc}")
-            logger.exception("Error during blacklist attack for %s", mac)
+            print(f"[!] Error durante la prueba a {mac}: {exc}")
+            logger.exception("Error during authorized target stress test for %s", mac)
         finally:
-            print(f"[+] Ataque DoS a {mac} finalizado.")
-            logger.info("Completed blacklist attack against %s", mac)
+            print(f"[+] Prueba de estrés a {mac} finalizada.")
+            logger.info("Completed authorized target stress test against %s", mac)
             with self._lock:
                 self._attack_threads.pop(mac, None)
 

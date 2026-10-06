@@ -61,6 +61,23 @@ class BlacklistManagerTests(unittest.TestCase):
         matches = self.manager._matching_targets(devices)
         self.assertEqual(matches, [])
 
+    def test_add_mac_rejects_invalid_address(self):
+        self.manager.add_mac("invalid")
+        self.assertIsNone(self.manager._find_entry("invalid"))
+
+    def test_authorized_scope_filters_matches(self):
+        scoped = blacklist_manager.BlacklistManager(
+            adapter="hci0",
+            blacklist_path=self.blacklist_path,
+            watch_interval=1,
+            authorized_macs={"11:22:33:44:55:66"},
+        )
+        scoped.toggle_mac(1)
+        self.mock_scanner.scan.return_value = {0: "AA:BB:CC:DD:EE:FF", 1: "11:22:33:44:55:66"}
+        devices = scoped._perform_scan()
+        matches = scoped._matching_targets(devices)
+        self.assertEqual([entry["mac"] for entry in matches], ["11:22:33:44:55:66"])
+
     def test_launch_attack_spawns_thread_once(self):
         with patch("blacklist_manager.BluetoothAttacker.dos_attack", side_effect=lambda *args, **kwargs: time.sleep(0.05)) as mock_attack:
             self.manager._launch_attack("AA:BB:CC:DD:EE:FF")

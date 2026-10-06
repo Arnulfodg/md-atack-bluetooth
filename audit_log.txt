@@ -124,3 +124,93 @@
 2025-10-24 09:36:58,688 - INFO - utils - Aviso de privilegios (check_bluetooth_service): verificar y, si es necesario, iniciar el servicio Bluetooth
 2025-10-24 09:40:30,740 - INFO - utils - Todas las herramientas requeridas están disponibles: ['hcitool', 'l2ping', 'sdptool', 'ussp-push', 'hciconfig', 'rfcomm', 'bt-agent', 'curl']
 2025-10-24 09:40:30,740 - INFO - utils - Aviso de privilegios (check_bluetooth_service): verificar y, si es necesario, iniciar el servicio Bluetooth
+2026-09-17 18:13:35,351 - INFO - root - Comando ejecutado: dos
+2026-09-17 18:13:35,352 - INFO - safety_controls - Dry-run allows planning intrusive command dos without privileged execution.
+2026-09-17 18:13:35,352 - INFO - __main__ - Ejecutando DoS contra AA:BB:CC:DD:EE:FF (modo=auto, hilos=4, tamaño=120, duración=5)
+2026-09-17 18:13:35,353 - INFO - bluetooth_attacker - Dry-run action for AA:BB:CC:DD:EE:FF: Plan DoS contra AA:BB:CC:DD:EE:FF (adapter=hci0, threads=4, packet_size=120, duration=5, mode=auto)
+2026-09-17 18:13:35,353 - INFO - root - Session summary | command=dos | adapter=hci0 | duration=0.01s | attacks=1
+2026-09-17 18:13:35,353 - INFO - root - Auditoría finalizada a las 2026-09-17 18:13:35.353454
+2026-09-17 18:14:21,172 - INFO - root - Comando ejecutado: dos
+2026-09-17 18:14:21,172 - INFO - safety_controls - Dry-run allows planning intrusive command dos without privileged execution.
+2026-09-17 18:14:21,172 - INFO - __main__ - Ejecutando DoS contra AA:BB:CC:DD:EE:FF (modo=auto, hilos=4, tamaño=120, duración=5)
+2026-09-17 18:14:21,172 - INFO - bluetooth_attacker - Dry-run action for AA:BB:CC:DD:EE:FF: Plan DoS contra AA:BB:CC:DD:EE:FF (adapter=hci0, threads=4, packet_size=120, duration=5, mode=auto)
+2026-09-17 18:14:21,173 - INFO - root - Session summary | command=dos | adapter=hci0 | duration=0.01s | attacks=0
+2026-09-17 18:14:21,173 - INFO - root - Auditoría finalizada a las 2026-09-17 18:14:21.173216
+2026-09-17 18:17:06,392 - ERROR - utils - Herramientas faltantes: ['ussp-push', 'bt-agent']
+2026-09-17 18:24:38,802 - INFO - utils - Todas las herramientas requeridas están disponibles: ['hcitool', 'l2ping', 'sdptool', 'ussp-push', 'hciconfig', 'rfcomm', 'bt-agent', 'curl']
+2026-09-17 18:24:38,803 - INFO - utils - Aviso de privilegios (check_bluetooth_service): verificar y, si es necesario, iniciar el servicio Bluetooth
+2026-09-17 18:24:38,900 - INFO - utils - Servicio Bluetooth ya estaba activo.
+2026-09-17 18:24:38,904 - INFO - __main__ - Usando el único adaptador disponible: hci0
+2026-09-17 18:24:38,905 - INFO - root - Comando ejecutado: scan
+2026-09-17 18:24:38,905 - INFO - __main__ - Ejecutando escaneo con el adaptador hci0
+2026-09-17 18:24:38,905 - INFO - utils - Aviso de privilegios (scanner.scan): el escaneo activo con hcitool requiere acceso privilegiado al adaptador Bluetooth
+2026-09-17 18:25:03,563 - INFO - bluetooth_scanner - Scan completed on hci0. Devices found: ['22:22:20:9D:16:17', '22:22:6E:88:C0:1F']
+2026-09-17 18:25:03,563 - INFO - root - Session summary | command=scan | adapter=hci0 | duration=24.77s | attacks=0
+2026-09-17 18:25:03,563 - INFO - root - Auditoría finalizada a las 2026-09-17 18:25:03.563847
+2026-09-17 18:29:26,277 - INFO - utils - Todas las herramientas requeridas están disponibles: ['hcitool', 'l2ping', 'sdptool', 'ussp-push', 'hciconfig', 'rfcomm', 'bt-agent', 'curl']
+2026-09-17 18:29:26,277 - INFO - utils - Aviso de privilegios (check_bluetooth_service): verificar y, si es necesario, iniciar el servicio Bluetooth
+2026-09-17 18:29:26,353 - INFO - utils - Servicio Bluetooth ya estaba activo.
+2026-09-17 18:31:00,575 - INFO - utils - Todas las herramientas requeridas están disponibles: ['hcitool', 'l2ping', 'sdptool', 'ussp-push', 'hciconfig', 'rfcomm', 'bt-agent', 'curl']
+2026-09-17 18:31:00,575 - INFO - utils - Aviso de privilegios (check_bluetooth_service): verificar y, si es necesario, iniciar el servicio Bluetooth
+2026-09-17 18:31:00,646 - INFO - utils - Servicio Bluetooth ya estaba activo.
+2026-09-17 18:31:00,649 - INFO - __main__ - Usando el único adaptador disponible: hci0
+2026-09-17 18:31:00,650 - INFO - root - Comando ejecutado: scan
+2026-09-17 18:31:00,650 - INFO - __main__ - Ejecutando escaneo con el adaptador hci0
+2026-09-17 18:31:00,650 - INFO - utils - Aviso de privilegios (scanner.scan): el escaneo activo con hcitool requiere acceso privilegiado al adaptador Bluetooth
+2026-09-17 18:31:07,971 - INFO - root - Session summary | command=scan | adapter=hci0 | duration=7.40s | attacks=0
+2026-09-17 18:31:07,971 - INFO - root - Auditoría finalizada a las 2026-09-17 18:31:07.971372
+2026-09-17 18:32:53,711 - INFO - utils - Todas las herramientas requeridas están disponibles: ['hcitool', 'l2ping', 'sdptool', 'ussp-push', 'hciconfig', 'rfcomm', 'bt-agent', 'curl']
+2026-09-17 18:32:53,711 - INFO - utils - Aviso de privilegios (check_bluetooth_service): verificar y, si es necesario, iniciar el servicio Bluetooth
+2026-09-17 18:32:53,762 - INFO - utils - Servicio Bluetooth ya estaba activo.
+2026-09-17 18:32:53,766 - INFO - __main__ - Usando el único adaptador disponible: hci0
+2026-09-17 18:32:53,766 - INFO - root - Comando ejecutado: scan
+2026-09-17 18:32:53,766 - INFO - __main__ - Ejecutando escaneo con el adaptador hci0
+2026-09-17 18:32:53,767 - INFO - utils - Aviso de privilegios (scanner.scan): el escaneo activo con hcitool requiere acceso privilegiado al adaptador Bluetooth
+2026-09-17 18:33:09,978 - INFO - bluetooth_scanner - Scan completed on hci0. Devices found: ['22:22:6E:88:C0:1F']
+2026-09-17 18:33:09,979 - INFO - root - Session summary | command=scan | adapter=hci0 | duration=16.28s | attacks=0
+2026-09-17 18:33:09,979 - INFO - root - Auditoría finalizada a las 2026-09-17 18:33:09.979545
+2026-09-17 18:33:23,421 - INFO - utils - Todas las herramientas requeridas están disponibles: ['hcitool', 'l2ping', 'sdptool', 'ussp-push', 'hciconfig', 'rfcomm', 'bt-agent', 'curl']
+2026-09-17 18:33:23,422 - INFO - utils - Aviso de privilegios (check_bluetooth_service): verificar y, si es necesario, iniciar el servicio Bluetooth
+2026-09-17 18:33:23,472 - INFO - utils - Servicio Bluetooth ya estaba activo.
+2026-09-17 18:33:23,475 - INFO - __main__ - Usando el único adaptador disponible: hci0
+2026-09-17 18:33:23,476 - INFO - root - Comando ejecutado: scan
+2026-09-17 18:33:23,476 - INFO - __main__ - Ejecutando escaneo con el adaptador hci0
+2026-09-17 18:33:23,476 - INFO - utils - Aviso de privilegios (scanner.scan): el escaneo activo con hcitool requiere acceso privilegiado al adaptador Bluetooth
+2026-09-17 18:33:30,552 - INFO - root - Session summary | command=scan | adapter=hci0 | duration=7.14s | attacks=0
+2026-09-17 18:33:30,552 - INFO - root - Auditoría finalizada a las 2026-09-17 18:33:30.552871
+2026-09-17 18:33:39,859 - INFO - utils - Todas las herramientas requeridas están disponibles: ['hcitool', 'l2ping', 'sdptool', 'ussp-push', 'hciconfig', 'rfcomm', 'bt-agent', 'curl']
+2026-09-17 18:33:39,860 - INFO - utils - Aviso de privilegios (check_bluetooth_service): verificar y, si es necesario, iniciar el servicio Bluetooth
+2026-09-17 18:33:39,909 - INFO - utils - Servicio Bluetooth ya estaba activo.
+2026-09-17 18:33:39,912 - INFO - __main__ - Usando el único adaptador disponible: hci0
+2026-09-17 18:33:39,913 - INFO - root - Comando ejecutado: scan
+2026-09-17 18:33:39,913 - INFO - __main__ - Ejecutando escaneo con el adaptador hci0
+2026-09-17 18:33:39,913 - INFO - utils - Aviso de privilegios (scanner.scan): el escaneo activo con hcitool requiere acceso privilegiado al adaptador Bluetooth
+2026-09-17 18:33:54,051 - INFO - bluetooth_scanner - Scan completed on hci0. Devices found: ['22:22:6E:88:C0:1F']
+2026-09-17 18:33:54,052 - INFO - root - Session summary | command=scan | adapter=hci0 | duration=14.20s | attacks=0
+2026-09-17 18:33:54,052 - INFO - root - Auditoría finalizada a las 2026-09-17 18:33:54.052247
+2026-09-17 18:37:39,836 - INFO - root - Comando ejecutado: scan
+2026-09-17 18:37:39,837 - INFO - __main__ - Ejecutando escaneo con el adaptador hci0 (mode=mixed, duration=30)
+2026-09-17 18:37:39,837 - INFO - root - Session summary | command=scan | adapter=hci0 | duration=0.01s | attacks=0
+2026-09-17 18:37:39,837 - INFO - root - Auditoría finalizada a las 2026-09-17 18:37:39.837633
+2026-09-17 18:44:08,665 - INFO - utils - Todas las herramientas requeridas están disponibles: ['hcitool', 'l2ping', 'sdptool', 'ussp-push', 'hciconfig', 'rfcomm', 'bluetoothctl', 'bt-agent', 'curl']
+2026-09-17 18:44:08,666 - INFO - utils - Aviso de privilegios (check_bluetooth_service): verificar y, si es necesario, iniciar el servicio Bluetooth
+2026-09-17 18:44:08,717 - INFO - utils - Servicio Bluetooth ya estaba activo.
+2026-09-17 18:44:08,720 - INFO - __main__ - Usando el único adaptador disponible: hci0
+2026-09-17 18:44:08,720 - INFO - root - Comando ejecutado: scan
+2026-09-17 18:44:08,721 - INFO - __main__ - Ejecutando escaneo con el adaptador hci0 (mode=mixed, duration=30)
+2026-09-17 18:44:08,721 - INFO - utils - Aviso de privilegios (scanner.scan_classic): el escaneo activo con hcitool requiere acceso privilegiado al adaptador Bluetooth
+2026-09-17 18:44:22,600 - INFO - bluetooth_scanner - Classic scan completed on hci0. Devices found: ['22:22:6E:88:C0:1F']
+2026-09-17 18:44:22,601 - INFO - utils - Aviso de privilegios (scanner.scan_ble): el escaneo BLE usa bluetoothctl para activar descubrimiento LE
+2026-09-17 18:44:52,683 - INFO - bluetooth_scanner - BLE scan completed on hci0. Devices found: ['08:EF:3B:CD:FD:9E', 'B0:67:43:44:88:46', 'EC:E3:34:D4:6B:1E', '02:49:73:92:2C:1B', '14:85:54:7A:60:6B', '22:22:6E:88:C0:1F', '22:22:20:9D:16:17']
+2026-09-17 18:44:52,683 - INFO - root - Session summary | command=scan | adapter=hci0 | duration=44.02s | attacks=0
+2026-09-17 18:44:52,683 - INFO - root - Auditoría finalizada a las 2026-09-17 18:44:52.683747
+2026-09-17 18:45:57,713 - INFO - utils - Todas las herramientas requeridas están disponibles: ['hcitool', 'l2ping', 'sdptool', 'ussp-push', 'hciconfig', 'rfcomm', 'bluetoothctl', 'bt-agent', 'curl']
+2026-09-17 18:45:57,713 - INFO - utils - Aviso de privilegios (check_bluetooth_service): verificar y, si es necesario, iniciar el servicio Bluetooth
+2026-09-17 18:45:57,758 - INFO - utils - Servicio Bluetooth ya estaba activo.
+2026-09-17 18:45:57,760 - INFO - __main__ - Usando el único adaptador disponible: hci0
+2026-09-17 18:45:57,760 - INFO - root - Comando ejecutado: info
+2026-09-17 18:45:57,761 - INFO - __main__ - Obteniendo información de EC:E3:34:D4:6B:1E
+2026-09-17 18:45:57,761 - INFO - utils - Aviso de privilegios (scanner.device_info): inspeccionar servicios SDP con sdptool necesita permisos administrativos
+2026-09-17 18:46:02,905 - ERROR - bluetooth_scanner - Failed to get SDP info for EC:E3:34:D4:6B:1E: Command '['sudo', 'sdptool', 'browse', 'EC:E3:34:D4:6B:1E']' returned non-zero exit status 255.
+2026-09-17 18:46:02,905 - INFO - root - Session summary | command=info | adapter=hci0 | duration=5.20s | attacks=0
+2026-09-17 18:46:02,911 - INFO - root - Auditoría finalizada a las 2026-09-17 18:46:02.911588

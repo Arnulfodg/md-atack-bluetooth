@@ -9,6 +9,7 @@ Esta es una versión refactorizada y mejorada de la herramienta de auditoría de
 *   **Estructura del Código:** El código ha sido refactorizado a un enfoque orientado a objetos para mayor claridad, modularidad y facilidad de mantenimiento.
 *   **Gestión de Dependencias:** El lanzador detecta automáticamente el sistema operativo, valida las dependencias (incluyendo Python) y ofrece instalarlas por ti de forma segura.
 *   **Interfaz de Línea de Comandos (CLI):** Se ha añadido una interfaz de línea de comandos con `argparse` para un uso más flexible y no interactivo.
+*   **Controles de auditoría:** Las operaciones intrusivas requieren un scope autorizado o confirmación explícita. También existe `--dry-run` para revisar acciones sin tocar Bluetooth.
 
 ## Requisitos y Configuración
 
@@ -30,8 +31,10 @@ Para usar la herramienta, simplemente ejecuta el script `run.sh` seguido del com
 **Escanear dispositivos:**
 
 ```bash
-./run.sh scan
+./run.sh --auto-select scan --mode mixed --duration 30
 ```
+
+El modo `mixed` combina Bluetooth clásico y BLE. Si un celular no aparece, abre la pantalla de Bluetooth del celular y vuelve a ejecutar el escaneo durante 30-60 segundos. También puedes usar `--mode classic` o `--mode ble` para aislar cada tipo de descubrimiento.
 
 **Obtener información de un dispositivo:**
 
@@ -42,9 +45,15 @@ Para usar la herramienta, simplemente ejecuta el script `run.sh` seguido del com
 **Realizar un ataque de denegación de servicio (DoS):**
 
 ```bash
-./run.sh dos --target-mac <MAC_ADDRESS> --threads 50 --duration 120
+./run.sh --scope-file scope.json dos --target-mac <MAC_ADDRESS> --threads 10 --duration 30
 ```
-Puedes omitir `--duration` si prefieres detener el ataque manualmente con `Ctrl+C`. Añade `--interactive` para ajustar parámetros en el momento; si no se indica, se utilizará un perfil agresivo por defecto.
+Por defecto se usa un perfil conservador. El perfil agresivo solo se activa con `--aggressive` y debe estar dentro del scope autorizado o usar `--confirm-authorized-scope`.
+
+**Revisar una operación sin ejecutarla:**
+
+```bash
+./run.sh --dry-run dos --target-mac <MAC_ADDRESS> --threads 10 --duration 30
+```
 
 **Seleccionar adaptador automáticamente (cuando hay varios):**
 
@@ -55,22 +64,38 @@ Puedes omitir `--duration` si prefieres detener el ataque manualmente con `Ctrl+
 **Descargar agenda y contactos:**
 
 ```bash
-./run.sh get_contacts --target-mac <MAC_ADDRESS>
+./run.sh --scope-file scope.json get_contacts --target-mac <MAC_ADDRESS>
 ```
 
 **Enviar un archivo a un dispositivo:**
 
 ```bash
-./run.sh send-file --target-mac <MAC_ADDRESS> --file /ruta/al/archivo --interactive
+./run.sh --scope-file scope.json send-file --target-mac <MAC_ADDRESS> --file /ruta/al/archivo --interactive
 ```
-El modo interactivo permite seleccionar el canal OBEX detectado o ingresar uno manualmente; sin él, la herramienta intenta detectar automáticamente el servicio adecuado y aplica el modo agresivo.
+El modo interactivo permite seleccionar el canal OBEX detectado o ingresar uno manualmente; sin él, la herramienta intenta detectar automáticamente el servicio adecuado.
+
+## Scope de Auditoría
+
+Para entornos profesionales se recomienda usar un archivo JSON de scope:
+
+```json
+{
+  "authorization_id": "cliente-lab-001",
+  "authorized_macs": ["AA:BB:CC:DD:EE:FF"],
+  "allowed_commands": ["scan", "info", "dos", "send-file"],
+  "starts_at": "2026-09-17T09:00:00",
+  "ends_at": "2026-09-17T18:00:00"
+}
+```
+
+Las operaciones intrusivas (`dos`, `send-file`, `disconnect`, `rfcomm_connect`, `force_takeover`, `get_contacts`, `blacklist`) se bloquean si no hay `--scope-file` o `--confirm-authorized-scope`. Usa `--confirm-authorized-scope` solo cuando ya tienes autorización formal pero no quieres cargar un archivo de scope.
 
 ## Pruebas Automatizadas
 
 Se incluye una batería básica de pruebas unitarias para validar la lógica principal (por ejemplo, la orquestación del módulo de lista negra). Ejecuta:
 
 ```bash
-python -m unittest discover tests
+python3 -m unittest discover tests
 ```
 
 Antes de ejecutar estas pruebas en modo offline, asegúrate de tener las dependencias de Python instaladas en el entorno virtual.
@@ -78,10 +103,10 @@ Antes de ejecutar estas pruebas en modo offline, asegúrate de tener las depende
 **Gestionar la lista negra y ejecutar el ataque automático:**
 
 ```bash
-./run.sh blacklist --auto-select
+./run.sh --scope-file scope.json blacklist --auto-select
 ```
 
-Durante el flujo se te preguntará si deseas escanear, agregar objetivos (desde el escaneo o manualmente) y confirmar el inicio del ataque. El fichero `blacklist.json` persiste los objetivos; puedes cambiarlo con `--blacklist-file`. El parámetro `--watch-interval` ajusta el intervalo entre escaneos en modo vigilancia.
+Durante el flujo se te preguntará si deseas escanear, agregar objetivos (desde el escaneo o manualmente) y confirmar el inicio de las pruebas. El fichero `blacklist.json` persiste los objetivos; puedes cambiarlo con `--blacklist-file`. El parámetro `--watch-interval` ajusta el intervalo entre escaneos en modo vigilancia.
 
 ## Autoría y Licencia
 

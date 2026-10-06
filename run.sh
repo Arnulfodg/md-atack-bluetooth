@@ -78,6 +78,7 @@ function map_package() {
             case "$requirement" in
                 python3) echo "python3" ;;
                 python3-venv) echo "python3-venv" ;;
+                python3-dev) echo "python3-dev" ;;
                 libbluetooth-dev) echo "libbluetooth-dev" ;;
                 gcc|make) echo "build-essential" ;;
                 pkg-config) echo "pkg-config" ;;
@@ -91,6 +92,7 @@ function map_package() {
             case "$requirement" in
                 python3) echo "python3" ;;
                 python3-venv) echo "python3-virtualenv" ;;
+                python3-dev) echo "python3-devel" ;;
                 libbluetooth-dev) echo "bluez-libs-devel" ;;
                 gcc) echo "gcc" ;;
                 make) echo "make" ;;
@@ -103,7 +105,7 @@ function map_package() {
             ;;
         pacman)
             case "$requirement" in
-                python3|python3-venv) echo "python" ;;
+                python3|python3-venv|python3-dev) echo "python" ;;
                 libbluetooth-dev) echo "bluez" ;;
                 gcc|make) echo "base-devel" ;;
                 pkg-config) echo "pkgconf" ;;
@@ -115,7 +117,7 @@ function map_package() {
             ;;
         zypper)
             case "$requirement" in
-                python3|python3-venv) echo "python3" ;;
+                python3|python3-venv|python3-dev) echo "python3-devel" ;;
                 libbluetooth-dev) echo "bluez-devel" ;;
                 gcc) echo "gcc" ;;
                 make) echo "make" ;;
@@ -338,6 +340,21 @@ function check_headers() {
     fi
 }
 
+function check_python_headers() {
+    if ! python3 - <<'PY' >/dev/null 2>&1
+import sysconfig
+from pathlib import Path
+
+include = sysconfig.get_path("include")
+if not include or not (Path(include) / "Python.h").exists():
+    raise SystemExit(1)
+PY
+    then
+        add_missing "python3-dev" "Cabeceras de desarrollo de Python (python3-dev / Python.h)"
+        add_pkg_for_requirement "python3-dev"
+    fi
+}
+
 function reset_state() {
     MISSING_KEYS=()
     MISSING_INFO=()
@@ -351,6 +368,7 @@ function check_requirements() {
     check_build_tools
     check_system_commands
     check_headers
+    check_python_headers
 }
 
 function print_missing() {
